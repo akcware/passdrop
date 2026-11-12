@@ -3,6 +3,8 @@
 Let a coding agent ask you for secrets in a small native window. The values go straight
 into your `.env` files or key paths and never enter the chat.
 
+**v0.1.0** · macOS · works with Claude Code and Codex · writes to `.env` files and key files
+
 ![passdrop window](docs/window.png)
 
 ## Why
@@ -34,35 +36,53 @@ cargo install --git https://github.com/akcware/passdrop passdrop
 
 ## Set up your agent
 
-**Claude Code**, as a plugin:
+The plugins add a skill that tells the agent when to use passdrop and how to read the
+result. You still need the CLI from Homebrew.
+
+### Claude Code
 
 ```
 /plugin marketplace add akcware/passdrop
 /plugin install passdrop@passdrop
 ```
 
-**Codex** (ChatGPT desktop app or Codex CLI), as a plugin:
+To update: `claude plugin marketplace update passdrop`, then
+`claude plugin update passdrop@passdrop`.
+
+### Codex
+
+For Codex CLI, or Codex in the ChatGPT desktop app:
 
 ```bash
 codex plugin marketplace add akcware/passdrop
 codex plugin add passdrop@passdrop
 ```
 
-Then start a new Codex session. In the CLI you can also run `/plugins` and install
-passdrop from the `passdrop` marketplace. Update it with
-`codex plugin marketplace upgrade passdrop`, and remove it with
-`codex plugin remove passdrop@passdrop`.
+Then start a new session. In the CLI, `/plugins` lists it too.
 
-**Codex IDE extension, or any agent without plugins:**
+- **Local threads only:** passdrop opens a window on your Mac, so it works in local threads,
+  not in Codex cloud.
+- **Update:** `codex plugin marketplace upgrade passdrop`.
+- **Remove:** `codex plugin remove passdrop@passdrop`.
+
+The window can't open inside Codex's sandbox. Approve the command when Codex asks, or
+allow it permanently in `~/.codex/rules/default.rules`:
+
+```
+prefix_rule(pattern=["passdrop"], decision="allow")
+```
+
+With that rule, passdrop's own window becomes the only approval step.
+
+### Codex IDE extension, or any agent without plugins
 
 ```bash
 passdrop init            # installs the skill for both; --claude or --codex for one
 passdrop init --undo     # removes it
 ```
 
-The plugins only add the skill, which tells the agent when to use passdrop and how to read
-the result. You still need the CLI from Homebrew. Use either a plugin or `passdrop init`
-for an agent, not both; otherwise it lists passdrop twice.
+Use either a plugin or `passdrop init` for an agent, not both. Otherwise the agent lists
+passdrop twice.
 
 ## What the agent does
 
@@ -113,16 +133,13 @@ read `.env` afterwards. Pair passdrop with deny rules, for example in Claude Cod
 
 `passdrop init` prints these suggestions and never changes your settings.
 
-**Codex:** the window can't open inside Codex's sandbox. Approve the command when asked,
-or allow it permanently with `prefix_rule(pattern=["passdrop"], decision="allow")` in
-`~/.codex/rules/default.rules`.
-
 ## Development
 
 ```bash
 cargo test --workspace                                   # 90+ tests
 cargo test --workspace --features passdrop/test-harness  # + end-to-end and canary leak tests
 claude plugin validate . --strict                        # plugin and marketplace manifests
+codex plugin marketplace add .                           # try the plugin in Codex from a local checkout
 ```
 
 `keychain`, `gh-secret` and `vercel-env` destinations exist on the `remote-sinks` branch.
