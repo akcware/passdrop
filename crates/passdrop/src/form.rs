@@ -392,7 +392,7 @@ mod tests {
         let root = std::fs::canonicalize(dir.path()).unwrap();
         let home = root.join("home");
         std::fs::create_dir_all(home.join("proj")).unwrap();
-        let env = Env::new(home.clone(), home.join("proj"), unsafe { libc::geteuid() });
+        let env = Env::new(home.clone(), home.join("proj"), passdrop_core::platform::current_owner());
         Fx { _dir: dir, env, root }
     }
 

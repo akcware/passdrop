@@ -2347,7 +2347,6 @@ dependencies = [
  "eframe",
  "image",
  "indexmap",
- "libc",
  "passdrop-core",
  "serde",
  "serde_json",
