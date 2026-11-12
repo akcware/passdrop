@@ -1,15 +1,23 @@
-# <img src="assets/icon.svg" width="36" height="36" alt=""> passdrop
+<p align="center">
+  <img src="assets/icon.svg" width="96" height="96" alt="">
+</p>
 
-Let a coding agent ask you for secrets in a small native window. The values go straight
-into your `.env` files or key paths and never enter the chat.
+<h1 align="center">passdrop</h1>
 
-**v0.1.0** · macOS · works with Claude Code and Codex · writes to `.env` files and key files
+<p align="center">
+  Let a coding agent ask you for secrets in a small native window.<br>
+  The values go straight into your <code>.env</code> files or key paths and never enter the chat.
+</p>
 
-[![Watch the passdrop demo on YouTube (1:27)](docs/demo-video.png)](https://youtu.be/iHMVXKvNfI4)
+<p align="center">
+  <b>v0.1.0</b> · macOS · works with Claude Code and Codex · writes to <code>.env</code> files and key files
+</p>
 
-▶ [Watch the 1:27 demo on YouTube](https://youtu.be/iHMVXKvNfI4)
-
-![passdrop window](docs/window.png)
+<p align="center">
+  <a href="https://youtu.be/iHMVXKvNfI4"><img src="docs/demo-video.png" width="720" alt="Watch the passdrop demo on YouTube (1:27)"></a>
+  <br>
+  <sub>▶ <a href="https://youtu.be/iHMVXKvNfI4">Watch the 1:27 demo on YouTube</a></sub>
+</p>
 
 ## Why
 
@@ -21,6 +29,10 @@ context. With passdrop:
 2. `passdrop request spec.json` opens a window. You type, paste or drag files in.
 3. passdrop writes each value to its destination and gives the agent **one line of
    metadata**: what was created, kept or skipped, and where. Never the value.
+
+<p align="center">
+  <img src="docs/window.png" width="400" alt="The passdrop window: a .p8 key file, an Issuer ID marked visible to the agent, a masked phone number and an OpenAI key with a format warning">
+</p>
 
 Format checks (`sk-…`, UUIDs, PEM headers) only warn. Key formats change, and you decide.
 
