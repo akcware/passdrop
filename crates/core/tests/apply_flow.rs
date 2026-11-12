@@ -242,7 +242,9 @@ fn empty_dot_git_does_not_crash() {
 
 #[test]
 fn remote_sinks_fail_cleanly_and_status_is_partial() {
-    let s = Sandbox::new();
+    let mut s = Sandbox::new();
+    // Never the real gh: a path that doesn't exist.
+    s.env.tools.gh = s.root.join("no-such-gh");
     let json = r#"{"title":"T","x-purpose":"P","properties":{
       "a":{"title":"A","writeOnly":true,"x-sink":{"kind":"dotenv","path":".env","key":"A"}},
       "b":{"title":"B","writeOnly":true,"x-sink":{"kind":"gh-secret","name":"B"}}}}"#;
@@ -255,8 +257,10 @@ fn remote_sinks_fail_cleanly_and_status_is_partial() {
         &s.git_env(),
     );
     assert_eq!(r.status, Status::Partial);
-    assert_eq!(r.fields["b"].error, Some("not_implemented"));
+    assert_eq!(r.fields["b"].error, Some("tool_missing"));
     assert_eq!(r.exit_code(), 20);
+    // The plan already warned that gh is missing.
+    assert!(p.warnings.iter().any(|w| w.code == "tool_missing"));
 }
 
 #[test]

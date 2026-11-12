@@ -15,8 +15,12 @@ use std::fs;
 use std::io;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Component, Path, PathBuf};
+use std::sync::Arc;
 
 use thiserror::Error;
+
+use crate::sinks::keychain::{KeychainBackend, NativeKeychain};
+use crate::sinks::tool::Tools;
 
 const SHARED_TEMP: [&str; 4] = ["/tmp", "/var/tmp", "/private/tmp", "/private/var/tmp"];
 const SYSTEM: [&str; 16] = [
@@ -31,12 +35,15 @@ const PROTECTED_COMPONENTS: [&str; 12] = [
 ];
 const WORKTREE_PARENTS: [&str; 2] = [".claude", ".codex"];
 
-/// Where passdrop runs. Tests pass a fake home so the real one is never touched.
+/// Where passdrop runs, and what it talks to. Tests pass a fake home, fake `gh`/`vercel`
+/// executables and an in-memory keychain, so nothing real is touched.
 #[derive(Debug, Clone)]
 pub struct Env {
     pub home: PathBuf,
     pub cwd: PathBuf,
     pub uid: u32,
+    pub tools: Tools,
+    pub keychain: Arc<dyn KeychainBackend>,
 }
 
 impl Env {
@@ -44,7 +51,7 @@ impl Env {
     pub fn new(home: PathBuf, cwd: PathBuf, uid: u32) -> Env {
         let home = fs::canonicalize(&home).unwrap_or(home);
         let cwd = fs::canonicalize(&cwd).unwrap_or(cwd);
-        Env { home, cwd, uid }
+        Env { home, cwd, uid, tools: Tools::default(), keychain: Arc::new(NativeKeychain) }
     }
 }
 

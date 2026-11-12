@@ -202,7 +202,7 @@ Every field needs `x-sink`, `x-echo: true`, or both. Nothing is echoed implicitl
 
 ### 7.1 Allowlist
 
-> **Branch status:** on `main`, only `dotenv` and `file` are implemented; `keychain`, `gh-secret` and `vercel-env` live on the `remote-sinks` branch and return `not_implemented` on `main`.
+> **Branch status:** this is the `remote-sinks` branch; all five sinks are implemented here. On `main`, only `dotenv` and `file` are.
 
 The list is compiled into the binary. A future config file may only narrow it, and only from the user's global config (`~/.config/passdrop/`), never from a repository.
 
@@ -429,7 +429,7 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`, `panic = "ab
   - *Not tested:* launching from Codex.
 
   *Built 2026-11-11. Includes `passdrop request`, moving dropped originals to the Trash, the "registry URL wins" rule, a design pass (system fonts, cards, light and dark themes), and a test harness behind a cargo feature. Release binary 8.7 MB. About 96 MB resident with the full form open, against 107 MB for an empty wgpu window and 95 MB for an empty glow window. First frame 140–320 ms. Not yet verified: Save through the real window, a real drag onto one of two file fields, the real Trash, launching from Terminal or Codex, and the light theme.*
-3. **Remote sinks:** `keychain`, `gh-secret`, `vercel-env`. *On the `remote-sinks` branch, not merged into `main`.* *Built 2026-11-12 and tested against fakes: an in-memory keychain and shell scripts standing in for `gh` and `vercel`. Not yet run against the real keychain, GitHub or Vercel.*
+3. **Remote sinks:** `keychain`, `gh-secret`, `vercel-env`. *This branch (`remote-sinks`), not merged into `main`.* *Built 2026-11-12 and tested against fakes: an in-memory keychain and shell scripts standing in for `gh` and `vercel`. Not yet run against the real keychain, GitHub or Vercel.*
    - Values go to `gh` and `vercel` on stdin only. Their error output is relayed as one line with the value redacted.
    - `vercel env ls --format json` includes the values of plain variables. passdrop parses it in memory for key names only and zeroizes the buffer.
    - GitHub and Vercel can't be read back (`verified` absent), so a dropped original is never trashed for them. A keychain write is verified only when passdrop created the item.

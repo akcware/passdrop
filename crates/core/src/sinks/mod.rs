@@ -1,8 +1,13 @@
 //! Destinations (DESIGN.md §7). Local sinks write in process, atomically, and read back.
-//! Remote sinks (keychain, gh-secret, vercel-env) live on the `remote-sinks` branch.
+//! `keychain` writes in process; `gh-secret` and `vercel-env` call their CLIs with the
+//! value on stdin.
 
 pub mod dotenv;
 pub mod file;
+pub mod gh;
+pub mod keychain;
+pub mod tool;
+pub mod vercel;
 
 use std::fs;
 use std::io::{self, Write};
@@ -49,6 +54,12 @@ pub enum SinkError {
     Io { path: String, message: String },
     #[error("{0} sinks are not implemented yet")]
     NotImplemented(&'static str),
+    #[error("`{0}` is not installed or not on PATH")]
+    ToolMissing(&'static str),
+    #[error("{tool}: {message}")]
+    Tool { tool: &'static str, message: String },
+    #[error("{0} takes text; this dropped file is not UTF-8")]
+    BinaryNotSupported(&'static str),
 }
 
 impl SinkError {
@@ -66,6 +77,9 @@ impl SinkError {
             SinkError::TooLarge { .. } => "too_large",
             SinkError::Io { .. } => "io",
             SinkError::NotImplemented(_) => "not_implemented",
+            SinkError::ToolMissing(_) => "tool_missing",
+            SinkError::Tool { .. } => "tool_failed",
+            SinkError::BinaryNotSupported(_) => "binary_not_supported",
         }
     }
 

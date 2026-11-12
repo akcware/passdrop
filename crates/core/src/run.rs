@@ -15,7 +15,7 @@ use crate::git::{self, GitStatus};
 use crate::guards::{self, Env, GuardError};
 use crate::registry::Registry;
 use crate::result::{Action, FieldResult, NEXT_FAILED, NEXT_OK, RunResult, Status};
-use crate::sinks::{SinkError, WriteOutcome, dotenv, file};
+use crate::sinks::{SinkError, WriteOutcome, dotenv, file, gh, keychain, vercel};
 use crate::spec::{Field, Issue, SinkSpec, Spec, Widget};
 use crate::validate::{Rules, Warning, normalize};
 
@@ -107,12 +107,8 @@ impl PlannedField {
                 guards::display_path(env, &dir.join(n))
             }
             Target::Remote(SinkSpec::Keychain { service, account }) => format!("Keychain · {service} / {account}"),
-            Target::Remote(SinkSpec::GhSecret { name, repo, env: e, org }) => {
-                let scope = org.as_deref().map(|o| format!("org {o}")).or_else(|| repo.clone()).unwrap_or_else(|| "this repo".into());
-                match e {
-                    Some(e) => format!("GitHub secret {name} · {scope} · environment {e}"),
-                    None => format!("GitHub secret {name} · {scope}"),
-                }
+            Target::Remote(SinkSpec::GhSecret { name, .. }) => {
+                format!("GitHub secret {name} · {}", gh_scope(self.target.as_ref()).map(|s| s.label()).unwrap_or_default())
             }
             Target::Remote(SinkSpec::VercelEnv { name, targets, .. }) => format!("Vercel env {name} · {}", targets.join(", ")),
             Target::Remote(other) => other.kind().to_string(),
@@ -127,8 +123,39 @@ impl PlannedField {
                 let p = final_path.cloned().or_else(|| name.as_ref().map(|n| dir.join(n)))?;
                 Some(format!("file:{}", guards::display_path(env, &p)))
             }
+            Target::Remote(SinkSpec::Keychain { service, account }) => Some(format!("keychain:{service}/{account}")),
+            Target::Remote(SinkSpec::GhSecret { name, .. }) => {
+                Some(format!("gh-secret:{}#{name}", gh_scope(self.target.as_ref())?.label()))
+            }
+            Target::Remote(SinkSpec::VercelEnv { name, targets, .. }) => {
+                Some(format!("vercel-env:{}#{name}", targets.join(",")))
+            }
             Target::Remote(_) => None,
         }
+    }
+}
+
+fn gh_scope(t: Option<&Target>) -> Option<gh::Scope<'_>> {
+    match t? {
+        Target::Remote(SinkSpec::GhSecret { repo, env, org, .. }) => {
+            Some(gh::Scope { repo: repo.as_deref(), env: env.as_deref(), org: org.as_deref() })
+        }
+        _ => None,
+    }
+}
+
+/// Is a remote destination already set? Never reads a value.
+fn remote_is_set(env: &Env, sink: &SinkSpec) -> Result<bool, SinkError> {
+    match sink {
+        SinkSpec::Keychain { service, account } => keychain::is_set(&*env.keychain, service, account),
+        SinkSpec::GhSecret { name, repo, env: e, org } => gh::is_set(
+            &env.tools,
+            &env.cwd,
+            name,
+            gh::Scope { repo: repo.as_deref(), env: e.as_deref(), org: org.as_deref() },
+        ),
+        SinkSpec::VercelEnv { name, targets, .. } => vercel::is_set(&env.tools, &env.cwd, name, targets),
+        other => Err(SinkError::NotImplemented(other.kind())),
     }
 }
 
@@ -175,6 +202,17 @@ pub fn plan_with(spec: Spec, env: &Env, registry: &Registry, git_env: &[(&str, &
                 let path = dir.join(n);
                 let existing = if file::exists(&path) { Existing::Set } else { Existing::NotSet };
                 (existing, Some(git::status_with(&path, git_env)))
+            }
+            Some(Target::Remote(sink)) => {
+                let existing = match remote_is_set(env, sink) {
+                    Ok(true) => Existing::Set,
+                    Ok(false) => Existing::NotSet,
+                    Err(e) => {
+                        warnings.push(Issue::new(&p, e.code(), e.to_string()));
+                        Existing::Unknown
+                    }
+                };
+                (existing, None)
             }
             _ => (Existing::Unknown, None),
         };
@@ -492,6 +530,10 @@ impl Written {
     fn local(outcome: WriteOutcome, path: PathBuf, git: GitStatus) -> Written {
         Written { outcome, path: Some(path), git: Some(git), verified: Some(true) }
     }
+
+    fn remote(outcome: WriteOutcome, verified: Option<bool>) -> Written {
+        Written { outcome, path: None, git: None, verified }
+    }
 }
 
 fn payload_bytes(payload: &Payload) -> &[u8] {
@@ -552,6 +594,20 @@ fn write_target(
             }
             let outcome = file::write(&full, payload_bytes(payload), *mode, overwrite)?;
             Ok(Written::local(outcome, full, git_status))
+        }
+        Target::Remote(SinkSpec::Keychain { service, account }) => {
+            let (outcome, verified) = keychain::write(&*env.keychain, service, account, payload_bytes(payload), overwrite)?;
+            Ok(Written::remote(outcome, verified.then_some(true)))
+        }
+        Target::Remote(SinkSpec::GhSecret { name, repo, env: e, org }) => {
+            let scope = gh::Scope { repo: repo.as_deref(), env: e.as_deref(), org: org.as_deref() };
+            let outcome = gh::write(&env.tools, &env.cwd, name, scope, payload_bytes(payload), overwrite)?;
+            Ok(Written::remote(outcome, None))
+        }
+        Target::Remote(SinkSpec::VercelEnv { name, targets, sensitive }) => {
+            let outcome =
+                vercel::write(&env.tools, &env.cwd, name, targets, *sensitive, payload_bytes(payload), overwrite)?;
+            Ok(Written::remote(outcome, None))
         }
         Target::Remote(s) => Err(SinkError::NotImplemented(s.kind())),
     }
