@@ -41,14 +41,28 @@ cargo install --git https://github.com/akcware/passdrop passdrop
 /plugin install passdrop@passdrop
 ```
 
-**Codex**, or Claude Code without the plugin:
+**Codex** (ChatGPT desktop app or Codex CLI), as a plugin:
+
+```bash
+codex plugin marketplace add akcware/passdrop
+codex plugin add passdrop@passdrop
+```
+
+Then start a new Codex session. In the CLI you can also run `/plugins` and install
+passdrop from the `passdrop` marketplace. Update it with
+`codex plugin marketplace upgrade passdrop`, and remove it with
+`codex plugin remove passdrop@passdrop`.
+
+**Codex IDE extension, or any agent without plugins:**
 
 ```bash
 passdrop init            # installs the skill for both; --claude or --codex for one
 passdrop init --undo     # removes it
 ```
 
-The skill tells the agent when to use passdrop and how to read the result.
+The plugins only add the skill, which tells the agent when to use passdrop and how to read
+the result. You still need the CLI from Homebrew. Use either a plugin or `passdrop init`
+for an agent, not both; otherwise it lists passdrop twice.
 
 ## What the agent does
 

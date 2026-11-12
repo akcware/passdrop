@@ -1,0 +1,22 @@
+{
+  "name": "passdrop",
+  "version": "0.1.0",
+  "description": "Ask the human for secrets in a local window and write them straight to .env files or key paths, so values never enter the chat.",
+  "author": { "name": "Askin Kadir Cekim", "url": "https://github.com/akcware" },
+  "homepage": "https://github.com/akcware/passdrop",
+  "repository": "https://github.com/akcware/passdrop",
+  "license": "MIT",
+  "keywords": ["secrets", "env", "credentials", "api-keys", "dotenv"],
+  "skills": "./skills/",
+  "requires_local_executor": true,
+  "interface": {
+    "displayName": "passdrop",
+    "shortDescription": "Secrets via a local window",
+    "longDescription": "When a task needs an API key, token, .p8/.pem key file or password, the agent writes a small JSON spec and runs `passdrop request`. A native macOS window opens, you enter the values, and passdrop writes them to .env files or key paths. The agent only gets one line of metadata, never the values. Requires the passdrop CLI (brew install akcware/tap/passdrop) and macOS 11+. The command needs approval to run outside the Codex sandbox.",
+    "developerName": "Askin Kadir Cekim",
+    "category": "Developer Tools",
+    "capabilities": ["Write"],
+    "websiteURL": "https://github.com/akcware/passdrop",
+    "defaultPrompt": ["Set up OPENAI_API_KEY in .env.local with passdrop."]
+  }
+}

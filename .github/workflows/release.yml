@@ -19,8 +19,10 @@ jobs:
         run: |
           crate="$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
           test "${GITHUB_REF_NAME#v}" = "$crate" || { echo "tag $GITHUB_REF_NAME != version $crate"; exit 1; }
-          plugin="$(python3 -c 'import json; print(json.load(open(".claude-plugin/plugin.json"))["version"])')"
-          test "$plugin" = "$crate" || { echo "plugin.json version $plugin != crate version $crate"; exit 1; }
+          for manifest in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
+            plugin="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['version'])" "$manifest")"
+            test "$plugin" = "$crate" || { echo "$manifest version $plugin != crate version $crate"; exit 1; }
+          done
       - name: Test
         run: cargo test --workspace
       - name: Build (arm64 + x86_64)
