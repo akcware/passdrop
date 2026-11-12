@@ -437,5 +437,5 @@ Release profile: `lto = true`, `codegen-units = 1`, `strip = true`, `panic = "ab
    - `--sensitive` is passed only for production and preview; Vercel rejects it for development.
    - GitHub's 48 KB secret limit is checked before calling `gh`.
    - A missing `gh` or `vercel` becomes a plan warning (`tool_missing`) and a field error.
-4. **Agent integration:** `SKILL.md`, `init` / `--undo`, permission docs.
-5. **Hardening and release:** canary test, accessibility check, CI builds, Homebrew tap.
+4. **Agent integration:** `SKILL.md`, `init` / `--undo`, permission docs. *Done 2026-11-12: `skills/passdrop/SKILL.md` (shared by the Claude Code plugin and `init`); `.claude-plugin/` plugin and marketplace manifests, validated with `claude plugin validate --strict`; `init` prints permission suggestions and never edits settings.*
+5. **Hardening and release:** canary test, accessibility check, CI builds, Homebrew tap. *Done 2026-11-12: canary leak test through the real binary; headless egui test that the accessibility tree and undo history hold no secret; CI on macos-latest (macos-14 runners are retired); v0.1.0 released as a universal, ad-hoc-signed macOS binary with checksums; `brew install akcware/tap/passdrop`. Not yet tried: installing the plugin from GitHub in a real Claude Code session, and running from Codex.*
