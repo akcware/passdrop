@@ -17,7 +17,6 @@
 
 use std::fs;
 use std::io;
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::sync::LazyLock;
 
@@ -206,7 +205,7 @@ pub fn write(path: &Path, key: &str, value: &str, overwrite: bool) -> Result<Wri
     let enc = encode(value)?;
     let (text, mode) = match read_text(path)? {
         Some(t) => {
-            let mode = fs::metadata(path).map_err(|e| SinkError::io(path, e))?.permissions().mode() & 0o777;
+            let mode = crate::platform::mode_of(&fs::metadata(path).map_err(|e| SinkError::io(path, e))?);
             (t, mode)
         }
         None => (Zeroizing::new(String::new()), NEW_FILE_MODE),

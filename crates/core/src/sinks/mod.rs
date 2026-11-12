@@ -4,14 +4,13 @@
 pub mod dotenv;
 pub mod file;
 
-use std::fs;
 use std::io::{self, Write};
-use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::path::Path;
 
 use thiserror::Error;
 
 use crate::guards::GuardError;
+use crate::platform;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WriteOutcome {
@@ -83,7 +82,7 @@ pub(crate) fn ensure_parent(path: &Path) -> Result<(), SinkError> {
     if parent.is_dir() {
         return Ok(());
     }
-    fs::DirBuilder::new().recursive(true).mode(0o700).create(parent).map_err(|e| SinkError::io(parent, e))
+    platform::create_private_dir_all(parent).map_err(|e| SinkError::io(parent, e))
 }
 
 /// Write via a temp file in the destination's directory, fsync, then rename over it.
@@ -93,7 +92,7 @@ pub(crate) fn atomic_write(path: &Path, bytes: &[u8], mode: u32) -> Result<(), S
         .prefix(".passdrop-")
         .tempfile_in(dir)
         .map_err(|e| SinkError::io(dir, e))?;
-    fs::set_permissions(tmp.path(), fs::Permissions::from_mode(mode)).map_err(|e| SinkError::io(path, e))?;
+    platform::set_mode(tmp.path(), mode).map_err(|e| SinkError::io(path, e))?;
     tmp.write_all(bytes).map_err(|e| SinkError::io(path, e))?;
     tmp.as_file().sync_all().map_err(|e| SinkError::io(path, e))?;
     tmp.persist(path).map_err(|e| SinkError::io(path, e.error))?;

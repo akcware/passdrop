@@ -7,6 +7,7 @@
 pub mod generate;
 pub mod git;
 pub mod guards;
+pub mod platform;
 pub mod registry;
 pub mod result;
 pub mod run;

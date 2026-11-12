@@ -36,7 +36,7 @@ fn directories_and_foreign_files_are_refused() {
     fs::create_dir_all(s.proj.join("d")).unwrap();
     assert_eq!(guards::resolve(&s.env, "d"), Err(GuardError::NotRegularFile));
     s.write(".env", "A=1\n");
-    let other = Env::new(s.home.clone(), s.proj.clone(), s.env.uid + 1);
+    let other = Env::new(s.home.clone(), s.proj.clone(), s.env.owner + 1);
     assert_eq!(guards::resolve(&other, ".env"), Err(GuardError::WrongOwner));
 }
 

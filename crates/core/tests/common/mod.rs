@@ -26,8 +26,7 @@ impl Sandbox {
         let home = root.join("home");
         let proj = home.join("proj");
         fs::create_dir_all(&proj).unwrap();
-        let uid = unsafe { libc::geteuid() };
-        let env = Env::new(home.clone(), proj.clone(), uid);
+        let env = Env::new(home.clone(), proj.clone(), passdrop_core::platform::current_owner());
         let ceiling = root.display().to_string();
         Sandbox { _dir: dir, root, home, proj, env, ceiling }
     }

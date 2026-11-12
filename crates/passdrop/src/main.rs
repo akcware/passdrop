@@ -18,6 +18,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::{Duration, Instant};
 
 use passdrop_core::guards::Env;
+use passdrop_core::platform;
 use passdrop_core::registry::Registry;
 use passdrop_core::result::{RunResult, Status};
 use passdrop_core::run::{self, Plan};
@@ -120,11 +121,10 @@ fn init_cmd(args: &[&str]) -> i32 {
     if !targets.claude && !targets.codex {
         targets = init::Targets { claude: true, codex: true };
     }
-    let Some(home) = std::env::var_os("HOME").filter(|h| !h.is_empty()) else {
-        eprintln!("passdrop init: HOME is not set");
+    let Some(home): Option<PathBuf> = platform::home_dir() else {
+        eprintln!("passdrop init: {} is not set", platform::HOME_VAR);
         return 1;
     };
-    let home = PathBuf::from(home);
     let result = if undo { init::uninstall(&home, &targets) } else { init::install(&home, &targets) };
     match result {
         Ok(lines) => {
@@ -161,11 +161,9 @@ fn read_spec(arg: &str) -> Result<String, String> {
 }
 
 fn make_env() -> Result<Env, String> {
-    let home = std::env::var_os("HOME").filter(|h| !h.is_empty()).ok_or("HOME is not set")?;
+    let home = platform::home_dir().ok_or_else(|| format!("{} is not set", platform::HOME_VAR))?;
     let cwd = std::env::current_dir().map_err(|e| format!("can't read the current directory: {e}"))?;
-    // SAFETY: geteuid has no preconditions and can't fail.
-    let uid = unsafe { libc::geteuid() };
-    Ok(Env::new(PathBuf::from(home), cwd, uid))
+    Ok(Env::new(home, cwd, platform::current_owner()))
 }
 
 /// Parse, check and plan. Err carries the line to print.

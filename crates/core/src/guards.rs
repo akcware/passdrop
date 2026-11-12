@@ -13,19 +13,12 @@
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
-use std::os::unix::fs::MetadataExt;
 use std::path::{Component, Path, PathBuf};
 
 use thiserror::Error;
 
-const SHARED_TEMP: [&str; 4] = ["/tmp", "/var/tmp", "/private/tmp", "/private/var/tmp"];
-const SYSTEM: [&str; 16] = [
-    "/etc", "/private/etc", "/usr", "/bin", "/sbin", "/System", "/Library", "/Applications", "/opt", "/cores",
-    "/dev", "/proc", "/sys", "/boot", "/root", "/var/root",
-];
-const HOME_PREFIXES: [&str; 9] = [
-    ".ssh", ".aws", ".kube", ".gnupg", ".docker", ".config/gh", ".local", "Library/Keychains", "Library/LaunchAgents",
-];
+use crate::platform::{self, HOME_PREFIXES, Owner, SHARED_TEMP, SYSTEM};
+
 const PROTECTED_COMPONENTS: [&str; 12] = [
     ".git", ".github", ".husky", ".ssh", ".aws", ".kube", ".gnupg", ".vscode", ".idea", ".cursor", ".gemini", ".agents",
 ];
@@ -36,15 +29,15 @@ const WORKTREE_PARENTS: [&str; 2] = [".claude", ".codex"];
 pub struct Env {
     pub home: PathBuf,
     pub cwd: PathBuf,
-    pub uid: u32,
+    pub owner: Owner,
 }
 
 impl Env {
     /// Canonicalizes home and cwd when they exist, so comparisons see real paths.
-    pub fn new(home: PathBuf, cwd: PathBuf, uid: u32) -> Env {
+    pub fn new(home: PathBuf, cwd: PathBuf, owner: Owner) -> Env {
         let home = fs::canonicalize(&home).unwrap_or(home);
         let cwd = fs::canonicalize(&cwd).unwrap_or(cwd);
-        Env { home, cwd, uid }
+        Env { home, cwd, owner }
     }
 }
 
@@ -187,7 +180,7 @@ pub fn check_existing(env: &Env, path: &Path) -> Result<(), GuardError> {
             if !m.is_file() {
                 return Err(GuardError::NotRegularFile);
             }
-            if m.uid() != env.uid {
+            if platform::owner_of(&m) != env.owner {
                 return Err(GuardError::WrongOwner);
             }
             Ok(())
