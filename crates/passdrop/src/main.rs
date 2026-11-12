@@ -4,6 +4,7 @@
 //! happens (submit, cancel, timeout, panic). stderr never carries values.
 
 mod form;
+mod init;
 mod pointer;
 mod theme;
 #[cfg(feature = "test-harness")]
@@ -33,6 +34,8 @@ commands:
   validate <spec.json | ->   check a spec and its destinations (one JSON line)
   check <spec.json | ->      is each value already set? never prints values (one JSON line)
   schema                     print the JSON Schema of the spec format
+  init [--claude] [--codex] [--undo]
+                             install the agent skill for Claude Code and Codex (or remove it)
   --version";
 
 pub const CANCELLED: &str = "The user cancelled. Nothing was written. Don't ask for these values in chat.";
@@ -85,6 +88,7 @@ fn main() -> ExitCode {
             println!("{}", serde_json::to_string_pretty(&spec::json_schema()).expect("schema serializes"));
             0
         }
+        ["init", rest @ ..] => init_cmd(rest),
         ["--version"] | ["-V"] => {
             println!("passdrop {}", env!("CARGO_PKG_VERSION"));
             0
@@ -96,6 +100,44 @@ fn main() -> ExitCode {
         _ => usage("unknown command or wrong arguments; run `passdrop help`"),
     };
     ExitCode::from(code as u8)
+}
+
+/// Human-readable output, not JSON: this is run by people, not agents.
+fn init_cmd(args: &[&str]) -> i32 {
+    let mut targets = init::Targets { claude: false, codex: false };
+    let mut undo = false;
+    for a in args {
+        match *a {
+            "--claude" => targets.claude = true,
+            "--codex" => targets.codex = true,
+            "--undo" => undo = true,
+            other => {
+                eprintln!("passdrop init: unknown option {other}\n\n{USAGE}");
+                return 2;
+            }
+        }
+    }
+    if !targets.claude && !targets.codex {
+        targets = init::Targets { claude: true, codex: true };
+    }
+    let Some(home) = std::env::var_os("HOME").filter(|h| !h.is_empty()) else {
+        eprintln!("passdrop init: HOME is not set");
+        return 1;
+    };
+    let home = PathBuf::from(home);
+    let result = if undo { init::uninstall(&home, &targets) } else { init::install(&home, &targets) };
+    match result {
+        Ok(lines) => {
+            for l in lines {
+                println!("{l}");
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("passdrop init: {e}");
+            1
+        }
+    }
 }
 
 fn usage(msg: &str) -> i32 {

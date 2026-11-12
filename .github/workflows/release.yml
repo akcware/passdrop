@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: Tag matches the crate version
+        run: |
+          crate="$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
+          test "${GITHUB_REF_NAME#v}" = "$crate" || { echo "tag $GITHUB_REF_NAME != version $crate"; exit 1; }
+          plugin="$(python3 -c 'import json; print(json.load(open(".claude-plugin/plugin.json"))["version"])')"
+          test "$plugin" = "$crate" || { echo "plugin.json version $plugin != crate version $crate"; exit 1; }
+      - name: Test
+        run: cargo test --workspace
+      - name: Build (arm64 + x86_64)
+        run: |
+          cargo build -p passdrop --release --target aarch64-apple-darwin
+          cargo build -p passdrop --release --target x86_64-apple-darwin
+      - name: Package universal binary
+        run: |
+          mkdir -p dist
+          lipo -create -output dist/passdrop \
+            target/aarch64-apple-darwin/release/passdrop \
+            target/x86_64-apple-darwin/release/passdrop
+          codesign --force --sign - dist/passdrop
+          if strings dist/passdrop | grep -qE -- '--test-input|--screenshot'; then
+            echo "test-only options found in the release binary"; exit 1
+          fi
+          tar -C dist -czf "passdrop-${GITHUB_REF_NAME}-macos-universal.tar.gz" passdrop
+          shasum -a 256 passdrop-*.tar.gz > checksums.txt
+          cat checksums.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" passdrop-*.tar.gz checksums.txt --generate-notes --verify-tag

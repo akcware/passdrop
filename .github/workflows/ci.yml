@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --features passdrop/test-harness -- -D warnings
+      - name: Tests (default build)
+        run: cargo test --workspace
+      - name: Tests (with the test harness, incl. the canary leak test)
+        run: cargo test --workspace --features passdrop/test-harness

@@ -121,8 +121,13 @@ fn refuses_unterminated_and_encrypted_files_untouched() {
 /// Real-loader check: Node reads back exactly what we wrote. Skipped when node is absent.
 #[test]
 fn node_reads_what_we_write() {
-    if Command::new("node").arg("--version").output().is_err() {
-        eprintln!("node not found; skipping");
+    // Needs Node with process.loadEnvFile (20.12+); skip quietly anywhere else.
+    let has_loader = Command::new("node")
+        .args(["-e", "process.exit(typeof process.loadEnvFile === 'function' ? 0 : 1)"])
+        .output()
+        .is_ok_and(|o| o.status.success());
+    if !has_loader {
+        eprintln!("node with process.loadEnvFile not found; skipping");
         return;
     }
     let s = Sandbox::new();

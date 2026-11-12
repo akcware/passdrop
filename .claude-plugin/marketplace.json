@@ -1,0 +1,12 @@
+{
+  "name": "passdrop",
+  "description": "Ask the human for secrets in a local window and write them straight to .env files or key paths, so values never enter the chat.",
+  "owner": { "name": "Askin Kadir Cekim" },
+  "plugins": [
+    {
+      "name": "passdrop",
+      "source": "./",
+      "description": "Ask the human for secrets in a local window and write them straight to .env files or key paths, so values never enter the chat."
+    }
+  ]
+}
