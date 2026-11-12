@@ -1,9 +1,13 @@
-# passdrop
+# <img src="assets/icon.svg" width="36" height="36" alt=""> passdrop
 
 Let a coding agent ask you for secrets in a small native window. The values go straight
 into your `.env` files or key paths and never enter the chat.
 
 **v0.1.0** · macOS · works with Claude Code and Codex · writes to `.env` files and key files
+
+[![Watch the passdrop demo on YouTube (1:27)](docs/demo-video.png)](https://youtu.be/iHMVXKvNfI4)
+
+▶ [Watch the 1:27 demo on YouTube](https://youtu.be/iHMVXKvNfI4)
 
 ![passdrop window](docs/window.png)
 
