@@ -1,0 +1,42 @@
+{
+  "title": "App Store submission",
+  "x-purpose": "Upload builds and metadata with the App Store Connect API",
+  "type": "object",
+  "properties": {
+    "asc_key": {
+      "title": "App Store Connect API key (.p8)",
+      "description": "App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → +. The file can be downloaded only once.",
+      "writeOnly": true,
+      "x-widget": "file",
+      "x-accept": [".p8"],
+      "x-sink": { "kind": "file", "dir": "~/.appstoreconnect/private_keys/", "name": "original", "mode": "600" }
+    },
+    "issuer_id": {
+      "title": "Issuer ID",
+      "type": "string",
+      "format": "uuid",
+      "description": "Shown above the Team Keys table.",
+      "x-echo": true
+    },
+    "review_phone": {
+      "title": "Phone number for App Review",
+      "type": "string",
+      "writeOnly": true,
+      "x-sink": { "kind": "dotenv", "path": ".env.local", "key": "REVIEW_PHONE" }
+    },
+    "openai_key": {
+      "title": "OpenAI API key",
+      "type": "string",
+      "writeOnly": true,
+      "x-known": "OPENAI_API_KEY",
+      "x-sink": { "kind": "dotenv", "path": ".env.local", "key": "OPENAI_API_KEY" }
+    },
+    "session_secret": {
+      "title": "Session secret",
+      "writeOnly": true,
+      "x-generate": "hex:32",
+      "x-sink": { "kind": "dotenv", "path": ".env.local", "key": "SESSION_SECRET" }
+    }
+  },
+  "required": ["asc_key", "issuer_id"]
+}

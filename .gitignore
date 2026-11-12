@@ -1,0 +1,6 @@
+/target
+.DS_Store
+
+# Local experiments and the live-test sandbox (may hold dummy keys and user files).
+/demo/
+/passdrop-spike/
