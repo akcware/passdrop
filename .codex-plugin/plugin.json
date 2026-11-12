@@ -17,6 +17,9 @@
     "category": "Developer Tools",
     "capabilities": ["Write"],
     "websiteURL": "https://github.com/akcware/passdrop",
-    "defaultPrompt": ["Set up OPENAI_API_KEY in .env.local with passdrop."]
+    "defaultPrompt": ["Set up OPENAI_API_KEY in .env.local with passdrop."],
+    "brandColor": "#0A84FF",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
   }
 }
